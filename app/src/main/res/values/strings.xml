@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">DemoAndroidFragments</string>
+    <string name="select_one">Selecciona un evento</string>
+</resources>
