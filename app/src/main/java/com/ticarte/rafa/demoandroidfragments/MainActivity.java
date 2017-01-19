@@ -1,70 +1,77 @@
 package com.ticarte.rafa.demoandroidfragments;
 
-import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
 public class MainActivity extends AppCompatActivity
-    implements listadoFragment.OnFragmentInteractionListener {
+    implements ListadoFragment.OnListadoFragmentListener {
+
+    private static String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d("MainActivity", "onCreate...");
         super.onCreate(savedInstanceState);
+        Log.d(TAG, "onCreate...");
         setContentView(R.layout.activity_main);
 
-        // Check whether the activity is using the layout version with
-        // the fragment_container FrameLayout. If so, we must add the first fragment
+        // Comprueba qué layout se ha cargado:
+        // - Si es "unique_fragment" sólo hay un fragmento en el layout
+        //   y lo tenemos que añadir nosotros al "FrameLayout".
+        // - Si no, los dos fragmentos conviven en la actividad
+        //   y se añaden automáticamente desde el layout al "fragment".
         if (findViewById(R.id.unique_fragment) != null) {
 
-            // However, if we're being restored from a previous state,
-            // then we don't need to do anything and should return or else
-            // we could end up with overlapping fragments.
-            if (savedInstanceState != null) {
-                return;
+            // Sólo crea el fragmento "listado" si no se ha restaurado
+            // de un estado previo de la actividad
+            // para evitar que se solapen múltiples instancias
+            if (savedInstanceState == null) {
+                ListadoFragment myListadoFragment = new ListadoFragment();
+
+                // Recupera los datos extras que posea la actividad
+                // y se los pasa al fragmento
+                myListadoFragment.setArguments(getIntent().getExtras());
+
+                // Añade el fragmento "listado" al "FrameLayout"
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .add(R.id.unique_fragment, myListadoFragment)
+                        .commit();
             }
-
-            // Create an instance of ExampleFragment
-            listadoFragment listadoFrag = new listadoFragment();
-
-            // In case this activity was started with special instructions from an Intent,
-            // pass the Intent's extras to the fragment as arguments
-            listadoFrag.setArguments(getIntent().getExtras());
-
-            // Add the fragment to the 'fragment_container' FrameLayout
-            getSupportFragmentManager().beginTransaction()
-                    .add(R.id.unique_fragment, listadoFrag).commit();
         }
     }
 
-    public void onFragmentInteraction(int position, EventoItem item){
-        Log.d("MainActivity", "onFragmentInteraction...");
-        // Capture the article fragment from the activity layout
-        contenidoFragment contenidoFrag = (contenidoFragment)
+    /**
+     * Implementa el método al que llama la interfaz del fragmento "listado".
+     * Se ejecuta cada vez que se hace click en un elemento de la lista.
+     */
+    public void onListadoInteraction(int position, EventoItem item){
+        Log.d(TAG, "onListadoInteraction...");
+
+        // Captura el fragmento "contenido" para ver si esta cargado en la actividad
+        // - Si existe, actualizamos sus datos, porque tendremos los dos fragmentos cargados.
+        // - Si no existe, lo creamos y lo cargamos en el "FrameLayout" sustituyendo la lista.
+        ContenidoFragment myContenidoFragment = (ContenidoFragment)
                 getSupportFragmentManager().findFragmentById(R.id.contenido_fragment);
 
-        if (contenidoFrag != null) {
-            // If article frag is available, we're in two-pane layout...
-
-            // Call a method in the ArticleFragment to update its content
-            contenidoFrag.updateView(position, item.getId());
+        if (myContenidoFragment != null) {
+            myContenidoFragment.updateContenidoFragment(item.getId());
         } else {
-            // Create fragment and give it an argument for the selected article
-            contenidoFragment newcontenidoFrag = new contenidoFragment();
+            // Crea el fragmento y le pasa datos extras
+            ContenidoFragment newContenidoFragment = new ContenidoFragment();
             Bundle args = new Bundle();
             args.putInt("position", position);
             args.putString("id", item.getId());
-            newcontenidoFrag.setArguments(args);
+            newContenidoFragment.setArguments(args);
 
-            // Replace whatever is in the fragment_container view with this fragment,
-            // and add the transaction to the back stack so the user can navigate back
-            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.replace(R.id.unique_fragment, newcontenidoFrag);
-            transaction.addToBackStack(null);
-
-            // Commit the transaction
-            transaction.commit();
+            // Reemplaza el fragmento "listado" por el fragmento "contenido"
+            // Añade la transacción a la pila para poder volver atrás
+            // Al volver atrás se detiene el fragmento pero no se destruye
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.unique_fragment, newContenidoFragment)
+                    .addToBackStack(null)
+                    .commit();
         }
     }
 }

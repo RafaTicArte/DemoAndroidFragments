@@ -1,13 +1,15 @@
 package com.ticarte.rafa.demoandroidfragments;
 
 public class EventoItem {
+
     private String nombre;
     private String id;
 
     public EventoItem(String id, String nombre){
-        this.nombre = nombre;
         this.id = id;
+        this.nombre = nombre;
     }
+
     public String getNombre() {
         return this.nombre;
     }
